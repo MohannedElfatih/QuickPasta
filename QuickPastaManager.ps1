@@ -1,4 +1,4 @@
-# QuickPastaManager.ps1 - GUI for managing QuickPasta profiles
+﻿# QuickPastaManager.ps1 - GUI for managing QuickPasta profiles
 #                   (c) 2025 by Umer Farooq
 # Usage: run this script with PowerShell 5.1+ (Windows 10+)
 # Note: requires .NET Framework 4.5+ (default on Windows 8+)

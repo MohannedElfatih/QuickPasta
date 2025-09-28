@@ -52,6 +52,7 @@ function Get-TargetFolder([string]$path) {
 
 function Test-Url([string]$s) { $s -match '^https?://\S+' }
 
+
 function Test-ZipUrl([string]$s) { ($s -match '^https?://' -and $s -match '\.zip($|\?)') }
 
 function Invoke-DownloadAndExtractZip([string]$url) {
@@ -73,21 +74,17 @@ function Invoke-DownloadAndExtractZip([string]$url) {
 
 function Invoke-DownloadFile([string]$url) {
   try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
-
   $workRoot = Join-Path $env:TEMP ('QuickPasta_' + [guid]::NewGuid().ToString('N'))
-  $download = Join-Path $workRoot 'download'
-  $filePath = Join-Path $download ([System.IO.Path]::GetFileName($url))
-
-  LogInfo "File path: $filePath"
-  
+  $downloadDir = Join-Path $workRoot 'download'
+  $fileName = [System.IO.Path]::GetFileName(($url -split '\?')[0])
+  if ([string]::IsNullOrWhiteSpace($fileName)) { $fileName = 'payload' }
+  $filePath = Join-Path $downloadDir $fileName
   New-Item -ItemType Directory -Path $workRoot -Force | Out-Null
-  New-Item -ItemType Directory -Path $download -Force | Out-Null
-
-  LogInfo "Downloading: $url"
+  New-Item -ItemType Directory -Path $downloadDir -Force | Out-Null
+  LogInfo "Downloading file: $url"
   Invoke-WebRequest -Uri $url -OutFile $filePath -UseBasicParsing
-  LogInfo "Downloaded: $filePath"
-
-  @{ Source = $download; Work = $workRoot }
+  LogInfo "Downloaded file to: $filePath"
+  @{ Source = $downloadDir; Work = $workRoot }
 }
 
 function Remove-EmptyDirs([string]$root) {
@@ -276,17 +273,16 @@ try {
   # Resolve target
   $targetPath = Get-TargetFolder -path $Target
 
-  # Prepare source (url vs. folder)
+  # Prepare source (URL vs. folder)
   $tempWork   = $null
   $sourcePath = $null
   if (Test-Url $sourceSpec) {
     if (Test-ZipUrl $sourceSpec) {
       $tempWork = Invoke-DownloadAndExtractZip $sourceSpec
-      $sourcePath = $tempWork.Source
     } else {
       $tempWork = Invoke-DownloadFile $sourceSpec
-      $sourcePath = $tempWork.Source
     }
+    $sourcePath = $tempWork.Source
   } else {
     $sourcePath = $sourceSpec
   }
